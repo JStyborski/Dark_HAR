@@ -2,16 +2,17 @@ import numpy as np
 
 
 class SequenceSampler:
-    def __init__(self, nFrames):
+    def __init__(self, nFrames, mode):
         self.nFrames = nFrames
+        self.mode = mode
 
-    def random(self, seqLen, mode):
+    def sample(self, seqLen):
         # Return a random uniform sampling of frames
-        if mode == 'uniform':
+        if self.mode == 'RU':
             return np.sort(np.random.choice(seqLen, self.nFrames, replace=False))
 
         # Generate a Poisson sampling from the sequence length to determine which frames to keep
-        elif mode == 'poisson':
+        elif self.mode == 'RP':
             # Set any frames that are double sampled to just one, then count the total frames sampled
             pOut = np.random.poisson(self.nFrames / seqLen, seqLen)
             pOut[pOut > 1] = 1
@@ -28,13 +29,12 @@ class SequenceSampler:
                 zeroSampler = np.random.choice(np.where(pOut == 0)[0], self.nFrames-pOutSum, replace=False)
                 return np.sort(np.concatenate((pOut.nonzero()[0], zeroSampler)))
 
-    def sequential(self, seqLen, mode):
         # Sample using the full range of frames, such that the beginning and end frames are included
-        if mode == 'full':
-            return np.linspace(0, seqLen, self.nFrames).astype(int)
+        if self.mode == 'SF':
+            return np.round(np.linspace(0, seqLen - 1, self.nFrames)).astype(int)
 
         # Sample from the first frame at a constant interval
-        elif mode == 'interval':
+        elif self.mode == 'SI':
             return np.arange(0, seqLen, np.floor((seqLen - 1) / (self.nFrames - 1)))[0:self.nFrames].astype(int)
 
 
